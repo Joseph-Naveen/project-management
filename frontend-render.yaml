@@ -1,0 +1,44 @@
+# Render Deployment Configuration for Frontend
+name: project-management-frontend
+type: web
+env: static
+plan: free
+region: oregon
+branch: main
+repo: https://github.com/yourusername/project-management-dashboard
+
+# Build Configuration
+buildCommand: cd frontend && npm ci && npm run build
+publishDir: frontend/dist
+staticPublishPath: ./frontend/dist
+
+# Environment Variables
+envVars:
+  - key: NODE_ENV
+    value: production
+  - key: VITE_API_URL
+    value: https://project-management-backend.onrender.com
+
+# Custom Headers for Security
+headers:
+  - path: /*
+    headers:
+      X-Frame-Options: DENY
+      X-Content-Type-Options: nosniff
+      Referrer-Policy: strict-origin-when-cross-origin
+      Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Redirect all routes to index.html for SPA
+redirects:
+  - source: /*
+    destination: /index.html
+    type: rewrite
+
+# Custom build settings
+build:
+  env:
+    NODE_VERSION: 18
+  commands:
+    - cd frontend
+    - npm ci
+    - npm run build

@@ -1,0 +1,158 @@
+# =================================
+# PROJECT MANAGEMENT DASHBOARD - DOCKER IGNORE
+# =================================
+
+# =================================
+# VERSION CONTROL
+# =================================
+.git
+.gitignore
+.gitattributes
+*.md
+README.md
+CHANGELOG.md
+LICENSE
+
+# =================================
+# DEVELOPMENT FILES
+# =================================
+.env.local
+.env.development
+.env.test
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# =================================
+# NODE.JS
+# =================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+.pnpm-debug.log*
+
+# =================================
+# BUILD ARTIFACTS
+# =================================
+dist/
+build/
+.next/
+out/
+target/
+
+# =================================
+# FRONTEND SPECIFIC
+# =================================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/coverage/
+
+# =================================
+# BACKEND SPECIFIC
+# =================================
+backend/node_modules/
+backend/dist/
+backend/coverage/
+backend/logs/
+backend/uploads/
+
+# =================================
+# TESTING
+# =================================
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+playwright-report/
+
+# =================================
+# LOGS
+# =================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# =================================
+# RUNTIME
+# =================================
+pids/
+*.pid
+*.seed
+*.pid.lock
+lib-cov/
+
+# =================================
+# TEMPORARY FILES
+# =================================
+.tmp/
+temp/
+*.tmp
+*.temp
+
+# =================================
+# OS GENERATED
+# =================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# =================================
+# DOCKER
+# =================================
+Dockerfile.prod
+docker-compose.prod.yml
+.dockerignore
+
+# =================================
+# SECURITY & SECRETS
+# =================================
+*.pem
+*.p12
+*.key
+*.crt
+*.csr
+.env
+.env.local
+.env.production
+secrets/
+
+# =================================
+# DATABASE
+# =================================
+*.sqlite
+*.sqlite3
+*.db
+database.sql
+pgdata/
+
+# =================================
+# DOCUMENTATION
+# =================================
+docs/
+documentation/
+*.pdf
+*.doc
+*.docx
+
+# =================================
+# PROJECT SPECIFIC
+# =================================
+project-info/
+INTEGRATION_SUMMARY.md
+IMPLEMENTATION_COMPLETE.md
+AUTH_FIXES_SUMMARY.md
+PROGRESS_BAR_FIXES.md
