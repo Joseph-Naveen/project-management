@@ -125,10 +125,33 @@ app.use(helmet());
 
 // CORS configuration
 console.log('🌐 CORS Configuration:');
-console.log(`   Allowed Origin: ${config.cors.origin}`);
+console.log(`   Allowed Origins: ALL (unrestricted)`);
 console.log(`   Environment: ${config.nodeEnv}`);
 console.log('');
 
+// Apply CORS before any other middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  console.log(`🔍 Manual CORS: ${req.method} ${req.path} from Origin: ${origin || 'none'}`);
+  
+  // Set CORS headers manually to ensure they're always present
+  res.header('Access-Control-Allow-Origin', origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization,X-Auth-Token,Cache-Control,Pragma');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    console.log(`   ✓ Manual preflight handled for ${origin}`);
+    res.status(200).end();
+    return;
+  }
+  
+  next();
+});
+
+// Also apply the cors middleware as backup
 app.use(cors({
   origin: config.cors.origin,
   credentials: true,
@@ -149,6 +172,25 @@ app.use(cors({
 
 // Handle preflight requests
 app.options('*', cors());
+
+// CORS debugging middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  console.log(`🔍 Request: ${req.method} ${req.path} from Origin: ${origin || 'none'}`);
+  console.log(`   Headers: ${JSON.stringify(req.headers, null, 2)}`);
+  
+  if (req.method === 'OPTIONS') {
+    console.log(`   ✓ Preflight request handled`);
+    console.log(`   Response Headers: ${JSON.stringify(res.getHeaders(), null, 2)}`);
+  }
+  
+  // Log response headers after they're set
+  res.on('finish', () => {
+    console.log(`   📤 Response sent with headers: ${JSON.stringify(res.getHeaders(), null, 2)}`);
+  });
+  
+  next();
+});
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -234,13 +276,35 @@ app.get('/api/test', (_req, res) => {
 
 // CORS test endpoint
 app.get('/api/cors-test', (req, res) => {
+  // Manually set CORS headers to ensure they're present
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization,X-Auth-Token,Cache-Control,Pragma');
+  
   res.status(200).json({
     success: true,
     message: 'CORS test endpoint',
     data: {
       origin: req.headers.origin,
-      corsConfig: config.cors.origin,
+      corsConfig: 'ALL ORIGINS ALLOWED',
       headers: req.headers,
+      timestamp: new Date().toISOString()
+    }
+  });
+});
+
+// Simple test for CORS POST request
+app.post('/api/cors-test', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  res.status(200).json({
+    success: true,
+    message: 'CORS POST test successful',
+    data: {
+      origin: req.headers.origin,
+      body: req.body,
       timestamp: new Date().toISOString()
     }
   });
