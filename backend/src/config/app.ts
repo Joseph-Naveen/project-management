@@ -55,9 +55,15 @@ export const config = {
   
   // CORS Configuration
   cors: {
-    origin: true, // Allow all origins
+    origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      // Allow all origins
+      console.log(`🔍 CORS origin check: ${origin}`);
+      callback(null, true);
+    },
     credentials: true,
     optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'X-Auth-Token', 'Cache-Control', 'Pragma'],
   },
   
   // Logging
