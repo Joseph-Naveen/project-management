@@ -1,0 +1,43 @@
+# Render Deployment Configuration for Backend
+name: project-management-backend
+type: web
+env: node
+plan: free
+region: oregon
+branch: main
+repo: https://github.com/yourusername/project-management-dashboard
+
+# Build Configuration
+buildCommand: cd backend && npm ci && npm run build
+startCommand: cd backend && npm start
+
+# Environment Variables (to be set in Render dashboard)
+envVars:
+  - key: NODE_ENV
+    value: production
+  - key: PORT
+    value: 5000
+  - key: DATABASE_URL
+    # Set this to your Render PostgreSQL connection string
+    sync: false
+  - key: JWT_SECRET
+    generateValue: true
+  - key: JWT_REFRESH_SECRET
+    generateValue: true
+  - key: CORS_ORIGIN
+    value: https://project-management-frontend.onrender.com
+
+# Health check
+healthCheckPath: /health
+
+# Build settings
+build:
+  env:
+    NODE_VERSION: 18
+  commands:
+    - cd backend
+    - npm ci
+    - npm run build
+
+# Auto-deploy on git push
+autoDeploy: true

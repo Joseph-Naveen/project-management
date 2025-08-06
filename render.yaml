@@ -1,0 +1,71 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: project-management-db
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.postgres
+    envVars:
+      - key: POSTGRES_DB
+        value: project_management
+      - key: POSTGRES_USER
+        value: project_user
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+    disk:
+      name: project-management-db-disk
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+
+  # Backend API Service
+  - type: web
+    name: project-management-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        fromService:
+          type: pserv
+          name: project-management-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: project-management-frontend
+          property: url
+    healthCheckPath: /health
+
+  # Frontend Web Service
+  - type: web
+    name: project-management-frontend
+    env: static
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: project-management-backend
+          property: url
+      - key: NODE_ENV
+        value: production
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  - name: project-management-db
+    databaseName: project_management
+    user: project_user

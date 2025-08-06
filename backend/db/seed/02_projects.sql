@@ -1,0 +1,6 @@
+-- Seed data for projects table
+
+INSERT INTO projects (id, name, description, status, priority, start_date, end_date, budget, progress, owner_id, tags) VALUES
+('660e8400-e29b-41d4-a716-446655440001', 'Mobile App Development', 'Developing a cross-platform mobile application with React Native for iOS and Android platforms. This project includes user authentication, real-time messaging, push notifications, and offline data synchronization.', 'active', 'high', '2024-01-15', '2024-03-15', 85000, 75, '550e8400-e29b-41d4-a716-446655440001', '["mobile", "react-native", "ios", "android"]'),
+('660e8400-e29b-41d4-a716-446655440002', 'Website Redesign', 'Complete redesign of the company website with modern UI/UX, improved performance, and mobile responsiveness. Includes content management system integration and SEO optimization.', 'active', 'medium', '2024-01-20', '2024-04-20', 45000, 45, '550e8400-e29b-41d4-a716-446655440002', '["web", "design", "cms", "seo"]'),
+('660e8400-e29b-41d4-a716-446655440003', 'API Integration', 'Integrating third-party APIs for payment processing, email services, and analytics. Includes comprehensive testing and documentation.', 'planning', 'medium', '2024-02-01', '2024-05-01', 30000, 0, '550e8400-e29b-41d4-a716-446655440001', '["api", "integration", "testing", "documentation"]'); 
