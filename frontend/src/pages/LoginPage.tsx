@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,6 +19,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const {
     register,
@@ -39,8 +40,8 @@ export const LoginPage: React.FC = () => {
       if (response.success && response.data) {
         toast.success('Login successful!');
         
-        // Force navigation using window.location for more reliable redirect
-        window.location.href = ROUTES.DASHBOARD;
+        // Use React Router navigate for better SPA routing
+        navigate(ROUTES.DASHBOARD, { replace: true });
       } else {
         throw new Error(response.message || 'Login failed');
       }

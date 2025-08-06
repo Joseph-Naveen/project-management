@@ -3,6 +3,7 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
 import { MobileMenuButton } from '../components/layout/MobileMenuButton';
 import { useAuthContext } from '../context/AuthContext';
+import { useNavigationSetup } from '../hooks/useNavigationSetup';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -11,6 +12,9 @@ interface MainLayoutProps {
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, isLoading } = useAuthContext();
+  
+  // Set up navigation service
+  useNavigationSetup();
 
   // Close sidebar on mobile when clicking outside
   useEffect(() => {

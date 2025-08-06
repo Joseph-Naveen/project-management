@@ -1,6 +1,10 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || '/api',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL 
+    ? (import.meta.env.VITE_API_BASE_URL.endsWith('/api') 
+        ? import.meta.env.VITE_API_BASE_URL 
+        : `${import.meta.env.VITE_API_BASE_URL}/api`)
+    : '/api',
   TIMEOUT: 10000, // 10 seconds
   RETRY_ATTEMPTS: 0, // Disabled retries for cost optimization on Render free tier
 } as const;
