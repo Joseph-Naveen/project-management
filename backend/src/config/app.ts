@@ -55,7 +55,21 @@ export const config = {
   
   // CORS Configuration
   cors: {
-    origin: process.env['CORS_ORIGIN'] || 'http://localhost:5173',
+    origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      // Allow requests with no origin (mobile apps, etc.)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = (process.env['CORS_ORIGIN'] || 'http://localhost:5173').split(',').map(o => o.trim());
+      
+      console.log(`🔍 CORS Check - Origin: ${origin}, Allowed: ${allowedOrigins.join(', ')}`);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`❌ CORS blocked origin: ${origin}`);
+        callback(new Error(`CORS policy: Origin ${origin} not allowed`), false);
+      }
+    },
   },
   
   // Logging
