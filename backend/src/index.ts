@@ -120,16 +120,13 @@ process.on('db:disconnected' as any, () => {
   console.log('⚠️  Database connection state updated: disconnected');
 });
 
-// Security middleware
-app.use(helmet());
-
-// CORS configuration
+// CORS configuration - MUST BE FIRST before any other middleware
 console.log('🌐 CORS Configuration:');
 console.log(`   Allowed Origins: ALL (unrestricted)`);
 console.log(`   Environment: ${config.nodeEnv}`);
 console.log('');
 
-// Apply CORS before any other middleware
+// Apply CORS before ANY other middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   console.log(`🔍 Manual CORS: ${req.method} ${req.path} from Origin: ${origin || 'none'}`);
@@ -151,43 +148,20 @@ app.use((req, res, next) => {
   next();
 });
 
-// Also apply the cors middleware as backup
-app.use(cors({
-  origin: config.cors.origin,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Origin',
-    'X-Requested-With',
-    'Content-Type',
-    'Accept',
-    'Authorization',
-    'X-Auth-Token',
-    'Cache-Control',
-    'Pragma'
-  ],
-  exposedHeaders: ['Content-Length', 'X-Requested-With'],
-  maxAge: 86400 // 24 hours
+// Security middleware - AFTER CORS
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false,
 }));
-
-// Handle preflight requests
-app.options('*', cors());
 
 // CORS debugging middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   console.log(`🔍 Request: ${req.method} ${req.path} from Origin: ${origin || 'none'}`);
-  console.log(`   Headers: ${JSON.stringify(req.headers, null, 2)}`);
   
   if (req.method === 'OPTIONS') {
     console.log(`   ✓ Preflight request handled`);
-    console.log(`   Response Headers: ${JSON.stringify(res.getHeaders(), null, 2)}`);
   }
-  
-  // Log response headers after they're set
-  res.on('finish', () => {
-    console.log(`   📤 Response sent with headers: ${JSON.stringify(res.getHeaders(), null, 2)}`);
-  });
   
   next();
 });
