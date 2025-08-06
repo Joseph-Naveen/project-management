@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { authService, TokenManager } from '../services';
+import { NavigationService } from '../services/navigationService';
 import type { User, LoginRequest, RegisterRequest } from '../types';
 
 // Auth state interface
@@ -115,8 +116,8 @@ export const useAuth = (): UseAuthReturn => {
         isLoading: false,
         error: null
       });
-      // Clear React Query cache
-      window.location.href = '/login';
+      // Clear React Query cache and navigate to login
+      NavigationService.toLogin();
     },
     onError: () => {
       // Still logout locally even if server request fails
@@ -126,7 +127,7 @@ export const useAuth = (): UseAuthReturn => {
         isLoading: false,
         error: null
       });
-      window.location.href = '/login';
+      NavigationService.toLogin();
     }
   });
 
@@ -149,8 +150,8 @@ export const useAuth = (): UseAuthReturn => {
         isLoading: false,
         error: 'Session expired. Please login again.'
       });
-      // Redirect to login page
-      window.location.href = '/login';
+      // Navigate to login page
+      NavigationService.toLogin();
     }
   }, [refetchUser]);
 
@@ -391,9 +392,9 @@ export const useRequireAuth = (requiredRole?: string) => {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      window.location.href = '/login';
+      NavigationService.toLogin();
     } else if (!isLoading && requiredRole && user?.role !== requiredRole) {
-      window.location.href = '/unauthorized';
+      NavigationService.toUnauthorized();
     }
   }, [isAuthenticated, isLoading, user?.role, requiredRole]);
 

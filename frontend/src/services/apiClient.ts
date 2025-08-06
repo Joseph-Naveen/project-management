@@ -70,7 +70,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
-      withCredentials: true, // Enable cookies for CORS requests
+      withCredentials: true,
     });
 
     this.setupInterceptors();

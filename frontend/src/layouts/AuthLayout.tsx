@@ -1,8 +1,12 @@
 import { Outlet } from 'react-router-dom'
 import { Suspense } from 'react'
 import { LoadingSpinner } from '../components/ui'
+import { useNavigationSetup } from '../hooks/useNavigationSetup'
 
 export const AuthLayout = () => {
+  // Set up navigation service
+  useNavigationSetup();
+  
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center w-full">
       <div className="w-full ">
