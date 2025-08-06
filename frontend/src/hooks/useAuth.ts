@@ -67,6 +67,7 @@ export const useAuth = (): UseAuthReturn => {
         error: null
       });
       // No need to refetch immediately - we have fresh data
+      NavigationService.toDashboard();
     },
     onError: (error: Error) => {
       setAuthState(prev => ({
