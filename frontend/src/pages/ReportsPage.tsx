@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, PieChart as RePieChart, Pie, Cell } from 'recharts'
 import {
   Users,
   Clock,
@@ -84,11 +85,14 @@ interface ReportSummary {
   activeProjects?: number
   completedProjects?: number
   avgCompletionRate?: number
+  overdueProjects?: number
+  onHoldProjects?: number
   totalTeams?: number
   totalMembers?: number
   totalUsers?: number
   totalTasks?: number
   totalHours?: number
+  billableHours?: number
 }
 
 export const ReportsPage = () => {
@@ -101,7 +105,20 @@ export const ReportsPage = () => {
   const [projectReports, setProjectReports] = useState<ProjectReport[]>([])
   const [teamReports, setTeamReports] = useState<TeamReport[]>([])
   const [userReports, setUserReports] = useState<UserReport[]>([])
-  const [summary, setSummary] = useState<ReportSummary>({})
+  const [summary, setSummary] = useState<ReportSummary>({
+    totalProjects: 0,
+    activeProjects: 0,
+    completedProjects: 0,
+    avgCompletionRate: 0,
+    overdueProjects: 0,
+    onHoldProjects: 0,
+    totalTeams: 0,
+    totalMembers: 0,
+    totalUsers: 0,
+    totalTasks: 0,
+    totalHours: 0,
+    billableHours: 0,
+  })
 
   // Fetch report data based on active tab
   const fetchReportData = useCallback(async () => {
@@ -118,12 +135,15 @@ export const ReportsPage = () => {
             // The backend returns {projects: [...], summary: {...}}
             const projects = projectResponse.data.projects || []
             setProjectReports(projects)
-            setSummary({
-              totalProjects: projectResponse.data.summary?.totalProjects || 0,
-              activeProjects: projectResponse.data.summary?.activeProjects || 0,
-              completedProjects: projectResponse.data.summary?.completedProjects || 0,
-              avgCompletionRate: projectResponse.data.summary?.avgCompletionRate || 0,
-            })
+            setSummary(prev => ({
+              ...prev,
+              totalProjects: projectResponse.data.summary?.totalProjects ?? prev.totalProjects,
+              activeProjects: projectResponse.data.summary?.activeProjects ?? prev.activeProjects,
+              completedProjects: projectResponse.data.summary?.completedProjects ?? prev.completedProjects,
+              avgCompletionRate: projectResponse.data.summary?.avgCompletionRate ?? prev.avgCompletionRate,
+              overdueProjects: projectResponse.data.summary?.overdueProjects ?? prev.overdueProjects,
+              onHoldProjects: projectResponse.data.summary?.onHoldProjects ?? prev.onHoldProjects,
+            }))
           }
           break
         }
@@ -147,12 +167,16 @@ export const ReportsPage = () => {
           const userResponse = await reportsService.getUserReports(params)
           if (userResponse.success && userResponse.data) {
             setUserReports(userResponse.data.users || [])
-            setSummary({
-              totalUsers: userResponse.data.stats?.totalUsers || 0,
-              totalTasks: userResponse.data.stats?.totalTasks || 0,
-              totalHours: userResponse.data.stats?.totalHours || 0,
-              avgCompletionRate: userResponse.data.stats?.avgCompletionRate || 0,
-            })
+            setSummary(prev => ({
+              ...prev,
+              totalUsers: userResponse.data.stats?.totalUsers ?? prev.totalUsers,
+              totalTasks: userResponse.data.stats?.totalTasks ?? prev.totalTasks,
+              totalHours: userResponse.data.stats?.totalHours ?? prev.totalHours,
+              billableHours:
+                (userResponse.data as { stats?: { billableHours?: number } } | undefined)?.stats?.billableHours ??
+                prev.billableHours,
+              avgCompletionRate: userResponse.data.stats?.avgCompletionRate ?? prev.avgCompletionRate,
+            }))
           }
           break
         }
@@ -261,6 +285,19 @@ export const ReportsPage = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
+                    <p className="text-sm text-gray-600">On Hold</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {summary.onHoldProjects || 0}
+                    </p>
+                  </div>
+                  <Clock className="h-8 w-8 text-yellow-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
                     <p className="text-sm text-gray-600">Completed Projects</p>
                     <p className="text-2xl font-bold text-gray-900">
                       {summary.completedProjects || 0}
@@ -280,6 +317,19 @@ export const ReportsPage = () => {
                     </p>
                   </div>
                   <Target className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Overdue Projects</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {summary.overdueProjects || 0}
+                    </p>
+                  </div>
+                  <PieChart className="h-8 w-8 text-red-500" />
                 </div>
               </CardContent>
             </Card>
@@ -406,6 +456,8 @@ export const ReportsPage = () => {
                   <th className="text-left py-3 px-4 font-semibold">Priority</th>
                   <th className="text-left py-3 px-4 font-semibold">Tasks</th>
                   <th className="text-left py-3 px-4 font-semibold">Completion</th>
+                  <th className="text-left py-3 px-4 font-semibold">Start</th>
+                  <th className="text-left py-3 px-4 font-semibold">Due</th>
                 </tr>
               </thead>
               <tbody>
@@ -461,11 +513,17 @@ export const ReportsPage = () => {
                         </span>
                       </div>
                     </td>
+                    <td className="py-4 px-4 text-sm text-gray-600">
+                      {new Date(project.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="py-4 px-4 text-sm text-gray-600">
+                      {new Date(project.updatedAt).toLocaleDateString()}
+                    </td>
                   </tr>
                 ))}
                 {projectReports.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-gray-600">
+                    <td colSpan={8} className="text-center py-8 text-gray-600">
                       No project data available
                     </td>
                   </tr>
@@ -733,6 +791,74 @@ export const ReportsPage = () => {
 
       {/* Summary Cards */}
       {renderSummaryCards()}
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {activeTab === 'projects' && (
+          <Card>
+            <CardHeader>
+              <h3 className="font-semibold">Project Completion</h3>
+            </CardHeader>
+            <CardContent>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={projectReports.map(p => ({ name: p.name, completion: p.stats.completionRate }))}>
+                    <XAxis dataKey="name" hide />
+                    <YAxis domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
+                    <Tooltip formatter={(v: number) => `${v}%`} />
+                    <Legend />
+                    <Bar dataKey="completion" fill="#3b82f6" name="Completion %" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'teams' && (
+          <Card>
+            <CardHeader>
+              <h3 className="font-semibold">Team Task Completion</h3>
+            </CardHeader>
+            <CardContent>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={teamReports.map(t => ({ name: t.name, completion: t.stats.completionRate }))}>
+                    <XAxis dataKey="name" hide />
+                    <YAxis domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
+                    <Tooltip formatter={(v: number) => `${v}%`} />
+                    <Legend />
+                    <Line type="monotone" dataKey="completion" stroke="#10b981" name="Completion %" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'users' && (
+          <Card>
+            <CardHeader>
+              <h3 className="font-semibold">Hours Distribution (Top 6)</h3>
+            </CardHeader>
+            <CardContent>
+              <div className="h-72 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RePieChart>
+                    <Pie data={userReports.slice(0, 6).map(u => ({ name: u.name, value: u.stats.totalHours || 0 }))} dataKey="value" nameKey="name" outerRadius={100} label>
+                      {userReports.slice(0, 6).map((_, i) => (
+                        <Cell key={`cell-${i}`} fill={["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4"][i % 6]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => `${v}h`} />
+                    <Legend />
+                  </RePieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Report Table */}
       <Card>

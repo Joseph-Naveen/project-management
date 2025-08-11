@@ -31,6 +31,11 @@ export const ProtectedRoute = ({
 
   // Redirect to login if not authenticated
   if (!isAuthenticated || !user) {
+    // Allow landing on login/register/forgot without double redirects
+    const publicPaths = [ROUTES.LOGIN, ROUTES.REGISTER, ROUTES.FORGOT_PASSWORD]
+    if (publicPaths.includes(location.pathname)) {
+      return <>{children}</>
+    }
     return <Navigate to={fallbackPath} state={{ from: location }} replace />
   }
 

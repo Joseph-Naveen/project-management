@@ -73,12 +73,25 @@ export const DashboardPage = () => {
         console.error('❌ Projects response failed:', projectsResponse);
       }
 
-      // Fetch recent activity
+      // Fetch recent activity (global); fallback to user's own activity if empty
       const activityResponse = await dashboardService.getRecentActivity();
       console.log('🔔 Activity response:', activityResponse);
       if (activityResponse.success && activityResponse.data) {
         // API returns { data: { activities: [...] } }
-        const activitiesData = activityResponse.data.activities || [];
+        let activitiesData = activityResponse.data.activities || [];
+        if (activitiesData.length === 0) {
+          try {
+            const myAct = await (await import('../services/userService')).userService.getMyActivity(10);
+            if (myAct.success && myAct.data) {
+              activitiesData = myAct.data.activities.map((a: any) => ({
+                id: a.id,
+                description: a.description,
+                createdAt: a.createdAt,
+                actor: { name: 'You' },
+              }));
+            }
+          } catch {}
+        }
         console.log('🔔 Activities data:', activitiesData);
         setRecentActivity(activitiesData);
       } else {

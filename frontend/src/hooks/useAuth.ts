@@ -58,7 +58,8 @@ export const useAuth = (): UseAuthReturn => {
       const response = await authService.login(credentials);
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      console.log('✅ Login mutation successful, setting auth state...');
       // Immediately set auth state with complete user data
       setAuthState({
         user: data.user,
@@ -66,10 +67,26 @@ export const useAuth = (): UseAuthReturn => {
         isLoading: false,
         error: null
       });
-      // No need to refetch immediately - we have fresh data
-      NavigationService.toDashboard();
+      
+      // Eagerly refetch current user to ensure guards see authenticated state
+      try {
+        await refetchUser();
+      } catch {}
+
+      // Navigate to dashboard after successful login
+      console.log('🚀 Attempting to navigate to dashboard...');
+      try {
+        NavigationService.toDashboard();
+        console.log('✅ NavigationService.toDashboard() called');
+      } catch (error) {
+        console.error('❌ Navigation error:', error);
+        // Fallback to window.location if NavigationService fails
+        console.log('🔄 Falling back to window.location...');
+        window.location.href = '/dashboard';
+      }
     },
     onError: (error: Error) => {
+      console.error('❌ Login mutation failed:', error);
       setAuthState(prev => ({
         ...prev,
         user: null,

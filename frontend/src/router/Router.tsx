@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { NavigationSetup } from '../components/NavigationSetup';
 import { MainLayout } from '../layouts/MainLayout';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { ProtectedRoute } from '../router/ProtectedRoute';
@@ -24,16 +25,22 @@ import { ROUTES } from '../constants';
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to={ROUTES.DASHBOARD} replace />,
+    element: (
+      <NavigationSetup>
+        <Navigate to={ROUTES.DASHBOARD} replace />
+      </NavigationSetup>
+    ),
   },
   {
     path: '/',
     element: (
-      <ProtectedRoute>
-        <MainLayout>
-          <Outlet />
-        </MainLayout>
-      </ProtectedRoute>
+      <NavigationSetup>
+        <ProtectedRoute>
+          <MainLayout>
+            <Outlet />
+          </MainLayout>
+        </ProtectedRoute>
+      </NavigationSetup>
     ),
     children: [
       {
@@ -88,7 +95,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: <AuthLayout />,
+    element: (
+      <NavigationSetup>
+        <AuthLayout />
+      </NavigationSetup>
+    ),
     children: [
       {
         path: ROUTES.LOGIN,
@@ -106,14 +117,26 @@ export const router = createBrowserRouter([
   },
   {
     path: ROUTES.UNAUTHORIZED,
-    element: <UnauthorizedPage />,
+    element: (
+      <NavigationSetup>
+        <UnauthorizedPage />
+      </NavigationSetup>
+    ),
   },
   {
     path: ROUTES.NOT_FOUND,
-    element: <NotFoundPage />,
+    element: (
+      <NavigationSetup>
+        <NotFoundPage />
+      </NavigationSetup>
+    ),
   },
   {
     path: '*',
-    element: <NotFoundPage />,
+    element: (
+      <NavigationSetup>
+        <NotFoundPage />
+      </NavigationSetup>
+    ),
   },
 ]);

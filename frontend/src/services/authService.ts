@@ -21,8 +21,29 @@ class AuthService {
       }
 
       return response;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
+      // Single retry on transient failures (network/CORS/backend warm-up or DB health 503)
+      const status = (typeof error === 'object' && error !== null && 'status' in error)
+        ? Number((error as { status?: number }).status || 0)
+        : (typeof error === 'object' && error !== null && 'response' in error)
+          ? Number(((error as { response?: { status?: number } }).response?.status) || 0)
+          : 0;
+      const message = (typeof error === 'object' && error !== null && 'message' in error)
+        ? String((error as { message?: string }).message || '')
+        : '';
+      const isTransient = status === 503 || status === 0 || /Network error/i.test(message);
+      if (isTransient) {
+        await new Promise((res) => setTimeout(res, 1200));
+        const retry = await apiClient.post<AuthResponse>(
+          API_ENDPOINTS.AUTH.LOGIN,
+          credentials
+        );
+        if (retry.success && retry.data) {
+          TokenManager.setTokens(retry.data.token, retry.data.refreshToken);
+        }
+        return retry;
+      }
       throw error;
     }
   }

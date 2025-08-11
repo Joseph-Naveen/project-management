@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { User } from '../models';
+import { User, Activity } from '../models';
 import { AppError } from '../types';
 import { Op } from 'sequelize';
 
@@ -140,6 +140,18 @@ export const createUser = async (req: Request, res: Response) => {
       phone,
     });
 
+    // Log activity
+    try {
+      await Activity.create({
+        type: 'create',
+        entity: 'user',
+        entityId: user.id,
+        actorId: (req as any).user?.id || user.id,
+        description: `Created user ${email}`,
+        metadata: { role: user.role, department: user.department }
+      });
+    } catch {}
+
     res.status(201).json({
       success: true,
       message: 'User created successfully',
@@ -197,6 +209,18 @@ export const updateUser = async (req: Request, res: Response) => {
     // Update user with only the specified fields
     await user.update(updateData);
 
+    // Log activity
+    try {
+      await Activity.create({
+        type: 'update',
+        entity: 'user',
+        entityId: user.id,
+        actorId: (req as any).user?.id || user.id,
+        description: `Updated user ${user.email}`,
+        metadata: { fields: Object.keys(updateData) }
+      });
+    } catch {}
+
     res.status(200).json({
       success: true,
       message: 'User updated successfully',
@@ -247,6 +271,17 @@ export const deleteUser = async (req: Request, res: Response) => {
 
     // Soft delete by deactivating
     await user.update({ isActive: false });
+
+    // Log activity
+    try {
+      await Activity.create({
+        type: 'delete',
+        entity: 'user',
+        entityId: user.id,
+        actorId: (req as any).user?.id || user.id,
+        description: `Deactivated user ${user.email}`,
+      });
+    } catch {}
 
     res.status(200).json({
       success: true,
@@ -302,6 +337,20 @@ export const updateProfile = async (req: Request, res: Response) => {
     // Update profile with only the specified fields
     await user.update(updateData);
 
+    // Log activity
+    try {
+      await Activity.create({
+        type: 'update',
+        entity: 'user',
+        entityId: user.id,
+        actorId: user.id,
+        description: 'Updated profile information',
+        metadata: { fields: Object.keys(updateData) }
+      });
+    } catch (e) {
+      // Non-blocking
+    }
+
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
@@ -345,6 +394,20 @@ export const changePassword = async (req: Request, res: Response) => {
     // Update password
     await user.update({ password: newPassword });
 
+    // Log activity (do not include sensitive data)
+    try {
+      await Activity.create({
+        type: 'update',
+        entity: 'user',
+        entityId: user.id,
+        actorId: user.id,
+        description: 'Changed account password',
+        metadata: { action: 'change_password' }
+      });
+    } catch (e) {
+      // Non-blocking
+    }
+
     res.status(200).json({
       success: true,
       message: 'Password changed successfully',
@@ -387,24 +450,20 @@ export const uploadAvatar = async (req: Request, res: Response) => {
 export const updatePreferences = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    const { theme, timezone, language, emailNotifications, pushNotifications } = req.body;
+    const { theme, language } = req.body;
 
     if (!userId) {
       throw new AppError('User not authenticated', 401);
     }
 
-    // For now, we'll return a mock response
-    // In a real implementation, you would store preferences in a separate table
+    // TODO: persist preferences in dedicated table; for now echo back allowed fields
     res.status(200).json({
       success: true,
       message: 'Preferences updated successfully',
       data: {
         preferences: {
           theme,
-          timezone,
           language,
-          emailNotifications,
-          pushNotifications,
         },
       },
     });
@@ -415,3 +474,37 @@ export const updatePreferences = async (req: Request, res: Response) => {
     throw new AppError('Failed to update preferences', 500);
   }
 }; 
+
+// Get authenticated user's activity
+export const getMyActivity = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      throw new AppError('User not authenticated', 401);
+    }
+
+    const { limit = 10 } = req.query;
+
+    const activities = await Activity.findAll({
+      where: { actorId: userId },
+      order: [['createdAt', 'DESC']],
+      limit: Number(limit),
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        activities: activities.map((a: any) => ({
+          id: a.id,
+          type: `${a.entity}_${a.type}`,
+          description: a.description,
+          createdAt: a.createdAt,
+          metadata: a.metadata,
+        })),
+      },
+    });
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError('Failed to fetch activity', 500);
+  }
+};
