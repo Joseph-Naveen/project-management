@@ -12,7 +12,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({
   children,
   allowedRoles = [],
-  fallbackPath = ROUTES.LOGIN,
+  fallbackPath = ROUTES.LOGIN as '/login',
 }: ProtectedRouteProps) => {
   const { user, isLoading, isAuthenticated } = useAuthContext()
   const location = useLocation()
@@ -32,7 +32,7 @@ export const ProtectedRoute = ({
   // Redirect to login if not authenticated
   if (!isAuthenticated || !user) {
     // Allow landing on login/register/forgot without double redirects
-    const publicPaths = [ROUTES.LOGIN, ROUTES.REGISTER, ROUTES.FORGOT_PASSWORD]
+    const publicPaths: string[] = [ROUTES.LOGIN, ROUTES.REGISTER, ROUTES.FORGOT_PASSWORD]
     if (publicPaths.includes(location.pathname)) {
       return <>{children}</>
     }

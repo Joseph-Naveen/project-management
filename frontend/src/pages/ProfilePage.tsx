@@ -19,7 +19,6 @@ import {
   Button, 
   Input,
   Textarea,
-  Badge,
   Avatar,
   Select
 } from '../components/ui';

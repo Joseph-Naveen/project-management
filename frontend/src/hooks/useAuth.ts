@@ -71,7 +71,9 @@ export const useAuth = (): UseAuthReturn => {
       // Eagerly refetch current user to ensure guards see authenticated state
       try {
         await refetchUser();
-      } catch {}
+      } catch {
+        console.error('❌ Error refetching user:');
+      }
 
       // Navigate to dashboard after successful login
       console.log('🚀 Attempting to navigate to dashboard...');
