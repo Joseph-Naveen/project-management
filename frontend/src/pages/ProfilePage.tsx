@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   User, 
   Mail, 
@@ -24,20 +24,18 @@ import {
   Select
 } from '../components/ui';
 import { userService } from '../services/userService';
+import { authService } from '../services/authService';
+import { toast } from 'react-toastify';
 
-// Mock user data - in real app this would come from API
-const mockUser = {
-  id: '1',
-  name: 'John Doe',
-  email: 'john.doe@company.com',
-  phone: '+1 (555) 123-4567',
-  location: 'San Francisco, CA',
-  jobTitle: 'Senior Project Manager',
-  department: 'Engineering',
-  joinDate: '2023-01-15',
-  bio: 'Experienced project manager with over 8 years in software development. Passionate about agile methodologies and team collaboration.',
-  avatar: '',
-  timezone: 'America/Los_Angeles',
+// Initial user state (will be filled from API)
+const initialUserState = {
+  name: '',
+  email: '',
+  phone: '',
+  location: '',
+  jobTitle: '',
+  department: '',
+  bio: '',
   language: 'en',
   theme: 'light'
 };
@@ -49,20 +47,9 @@ const mockStats = {
   hoursLogged: 1420
 };
 
-const mockRecentActivity = [
-  { id: '1', action: 'Completed task "User Authentication"', date: '2024-01-30', type: 'task' },
-  { id: '2', action: 'Created project "Mobile App v2.0"', date: '2024-01-28', type: 'project' },
-  { id: '3', action: 'Joined team "Frontend Development"', date: '2024-01-25', type: 'team' },
-  { id: '4', action: 'Updated profile information', date: '2024-01-22', type: 'profile' }
-];
+// Removed mock recent activity; using live data from API
 
-const timezoneOptions = [
-  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
-  { value: 'America/Denver', label: 'Mountain Time (MT)' },
-  { value: 'America/Chicago', label: 'Central Time (CT)' },
-  { value: 'America/New_York', label: 'Eastern Time (ET)' },
-  { value: 'UTC', label: 'UTC' }
-];
+// Removed timezone options as preferences are language + theme only
 
 const languageOptions = [
   { value: 'en', label: 'English' },
@@ -82,18 +69,39 @@ export const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'preferences' | 'activity'>('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    name: mockUser.name,
-    email: mockUser.email,
-    phone: mockUser.phone,
-    location: mockUser.location,
-    jobTitle: mockUser.jobTitle,
-    department: mockUser.department,
-    bio: mockUser.bio,
-    timezone: mockUser.timezone,
-    language: mockUser.language,
-    theme: mockUser.theme
-  });
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+  const [formData, setFormData] = useState(initialUserState);
+  const [recentActivity, setRecentActivity] = useState<Array<{ id: string; description: string; createdAt: string }>>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const me = await authService.getCurrentUser();
+        if (me.success && me.data) {
+          const u: any = me.data;
+          setFormData(prev => ({
+            ...prev,
+            name: u.name || '',
+            email: u.email || '',
+            phone: u.phone || '',
+            location: u.location || '',
+            jobTitle: u.jobTitle || '',
+            department: u.department || '',
+            bio: u.bio || '',
+            language: u.preferences?.language || 'en',
+            theme: u.preferences?.theme || 'light',
+          }));
+        }
+      } catch {}
+      try {
+        const act = await userService.getMyActivity(10);
+        if (act.success && act.data) {
+          setRecentActivity(act.data.activities.map((a: any) => ({ id: a.id, description: a.description, createdAt: a.createdAt })));
+        }
+      } catch {}
+    };
+    load();
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -106,24 +114,41 @@ export const ProfilePage = () => {
       if (response.success) {
         setIsEditing(false);
         // You could add a success notification here
-        console.log('Profile updated successfully');
+        toast.success('Profile updated successfully');
       } else {
-        console.error('Failed to update profile:', response.message);
+        toast.error(response.message || 'Failed to update profile');
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      toast.error('Error updating profile');
     }
   };
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'task': return '✅';
-      case 'project': return '📁';
-      case 'team': return '👥';
-      case 'profile': return '👤';
-      default: return '📝';
+  const handleChangePassword = async () => {
+    try {
+      if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmNewPassword) {
+        toast.error('Please fill in all password fields');
+        return;
+      }
+      if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
+        toast.error('New passwords do not match');
+        return;
+      }
+      const response = await userService.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      if (response.success) {
+        toast.success('Password updated successfully');
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+      } else {
+        toast.error(response.message || 'Failed to update password');
+      }
+    } catch (error) {
+      toast.error('Error updating password');
     }
   };
+
+  // Activity icon helper not required; using a generic icon
 
   return (
     <div className="space-y-6">
@@ -144,18 +169,18 @@ export const ProfilePage = () => {
             <CardContent className="p-6">
               <div className="text-center">
                 <div className="relative inline-block">
-                  <Avatar size="xl" alt={mockUser.name} src={mockUser.avatar} />
+                  <Avatar size="xl" alt={formData.name} src={''} />
                   <button className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors">
                     <Camera className="w-4 h-4" />
                   </button>
                 </div>
-                <h2 className="mt-4 text-xl font-semibold text-gray-900">{mockUser.name}</h2>
-                <p className="text-gray-500">{mockUser.jobTitle}</p>
-                <p className="text-sm text-gray-400">{mockUser.department}</p>
+                <h2 className="mt-4 text-xl font-semibold text-gray-900">{formData.name}</h2>
+                <p className="text-gray-500">{formData.jobTitle}</p>
+                <p className="text-sm text-gray-400">{formData.department}</p>
                 
                 <div className="mt-4 flex items-center justify-center text-sm text-gray-500">
                   <Calendar className="w-4 h-4 mr-1" />
-                  Joined {new Date(mockUser.joinDate).toLocaleDateString()}
+                  {formData.email}
                 </div>
               </div>
 
@@ -295,6 +320,8 @@ export const ProfilePage = () => {
                     <Input
                       label="Current Password"
                       type={showPassword ? 'text' : 'password'}
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
                       rightIcon={
                         <button
                           type="button"
@@ -308,31 +335,21 @@ export const ProfilePage = () => {
                     <Input
                       label="New Password"
                       type={showPassword ? 'text' : 'password'}
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
                     />
                     <Input
                       label="Confirm New Password"
                       type={showPassword ? 'text' : 'password'}
+                      value={passwordForm.confirmNewPassword}
+                      onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmNewPassword: e.target.value }))}
                     />
-                    <Button>Update Password</Button>
+                    <Button onClick={handleChangePassword}>Update Password</Button>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader title="Two-Factor Authentication" />
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">SMS Authentication</h4>
-                      <p className="text-sm text-gray-500">Receive codes via SMS to your phone</p>
-                    </div>
-                    <Badge variant="secondary">Disabled</Badge>
-                  </div>
-                  <Button variant="outline" className="mt-4">
-                    Enable 2FA
-                  </Button>
-                </CardContent>
-              </Card>
+              {/* 2FA removed */}
             </div>
           )}
 
@@ -341,13 +358,7 @@ export const ProfilePage = () => {
               <CardHeader title="Application Preferences" />
               <CardContent>
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Select
-                      label="Timezone"
-                      options={timezoneOptions}
-                      value={formData.timezone}
-                      onChange={(e) => handleInputChange('timezone', e.target.value)}
-                    />
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Select
                       label="Language"
                       options={languageOptions}
@@ -363,31 +374,7 @@ export const ProfilePage = () => {
                     onChange={(e) => handleInputChange('theme', e.target.value)}
                   />
 
-                  <div className="border-t pt-6">
-                    <h4 className="text-sm font-medium text-gray-900 mb-4">Notifications</h4>
-                    <div className="space-y-4">
-                      {[
-                        { key: 'email_notifications', label: 'Email Notifications', description: 'Receive notifications via email' },
-                        { key: 'task_updates', label: 'Task Updates', description: 'Get notified when tasks are updated' },
-                        { key: 'project_invites', label: 'Project Invitations', description: 'Receive invitations to new projects' },
-                        { key: 'weekly_summary', label: 'Weekly Summary', description: 'Get weekly progress summaries' }
-                      ].map((setting) => (
-                        <div key={setting.key} className="flex items-center justify-between">
-                          <div>
-                            <h5 className="text-sm font-medium text-gray-900">{setting.label}</h5>
-                            <p className="text-sm text-gray-500">{setting.description}</p>
-                          </div>
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                              defaultChecked
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  
                 </div>
               </CardContent>
             </Card>
@@ -398,21 +385,20 @@ export const ProfilePage = () => {
               <CardHeader title="Recent Activity" />
               <CardContent>
                 <div className="space-y-4">
-                  {mockRecentActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="text-lg">{getActivityIcon(activity.type)}</div>
+                  {recentActivity.map((a) => (
+                    <div key={a.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="text-lg">📝</div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-900">{activity.action}</p>
+                        <p className="text-sm text-gray-900">{a.description}</p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {new Date(activity.date).toLocaleDateString()}
+                          {new Date(a.createdAt).toLocaleString()}
                         </p>
                       </div>
                     </div>
                   ))}
-                </div>
-                
-                <div className="mt-6 text-center">
-                  <Button variant="outline">Load More Activity</Button>
+                  {recentActivity.length === 0 && (
+                    <p className="text-sm text-gray-500">No recent activity</p>
+                  )}
                 </div>
               </CardContent>
             </Card>

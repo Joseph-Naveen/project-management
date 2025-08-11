@@ -91,6 +91,51 @@ class UserService {
   }
 
   /**
+   * Change current user's password
+   */
+  async changePassword(payload: { currentPassword: string; newPassword: string }): Promise<ApiResponse<{ message: string }>> {
+    try {
+      return await apiClient.put(API_ENDPOINTS.USERS.CHANGE_PASSWORD, payload);
+    } catch (error) {
+      console.error('Change password error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update current user's preferences
+   */
+  async updatePreferences(payload: {
+    theme?: string;
+    language?: string;
+  }): Promise<ApiResponse<{ preferences: Record<string, unknown> }>> {
+    try {
+      return await apiClient.put(API_ENDPOINTS.USERS.PREFERENCES, payload);
+    } catch (error) {
+      console.error('Update preferences error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get my recent activity
+   */
+  async getMyActivity(limit: number = 10): Promise<ApiResponse<{ activities: Array<{
+    id: string;
+    type: string;
+    description: string;
+    createdAt: string;
+    metadata?: Record<string, unknown>;
+  }> }>> {
+    try {
+      return await apiClient.get(`${API_ENDPOINTS.USERS.MY_ACTIVITY}?limit=${limit}`);
+    } catch (error) {
+      console.error('Get my activity error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Deactivate user (soft delete)
    */
   async deactivateUser(id: string): Promise<ApiResponse<User>> {

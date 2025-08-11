@@ -3,7 +3,7 @@ import config from '../config/app';
 
 export const rateLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs, // 15 minutes
-  max: config.rateLimit.maxRequests, // limit each IP to 100 requests per windowMs
+  max: (process.env['NODE_ENV'] === 'development') ? 2000 : config.rateLimit.maxRequests, // bump all requests in dev
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.',
@@ -23,7 +23,7 @@ export const rateLimiter = rateLimit({
 // Specific rate limiter for authentication endpoints
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: (process.env['NODE_ENV'] === 'development') ? 1000 : 50, // higher limits in dev, reasonable in prod
   message: {
     success: false,
     message: 'Too many authentication attempts, please try again later.',

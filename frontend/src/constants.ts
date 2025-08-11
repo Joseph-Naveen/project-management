@@ -52,6 +52,9 @@ export const API_ENDPOINTS = {
     BASE: '/users',
     BY_ID: (id: string) => `/users/${id}`,
     PROFILE: '/users/profile',
+    CHANGE_PASSWORD: '/users/change-password',
+    PREFERENCES: '/users/preferences',
+    MY_ACTIVITY: '/users/activity',
     TIMESHEET: (id: string) => `/users/${id}/timesheet`,
   },
   

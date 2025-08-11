@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
-import { authService } from '../services/authService';
+import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
 import { ROUTES } from '../constants';
+import { NavigationService } from '../services/navigationService';
 
 // Validation schema
 const loginSchema = z.object({
@@ -19,7 +20,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const {
     register,
@@ -35,17 +36,19 @@ export const LoginPage: React.FC = () => {
     
     setIsLoading(true);
     try {
-      const response = await authService.login({ email: data.email, password: data.password });
+      console.log('🔐 Attempting login...');
+      await login({ email: data.email, password: data.password });
       
-      if (response.success && response.data) {
-        toast.success('Login successful!');
-        
-        // Use React Router navigate for better SPA routing
-        navigate(ROUTES.DASHBOARD, { replace: true });
-      } else {
-        throw new Error(response.message || 'Login failed');
+      console.log('✅ Login successful!');
+      toast.success('Login successful!');
+      // Redundant safeguard: navigate explicitly to ensure UX even if hook navigation races
+      try {
+        NavigationService.toDashboard(true);
+      } catch {
+        window.location.href = ROUTES.DASHBOARD;
       }
     } catch (error: unknown) {
+      console.error('❌ Login error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
       toast.error(errorMessage);
       setIsLoading(false);
@@ -90,7 +93,7 @@ export const LoginPage: React.FC = () => {
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="bg-white/20 rounded-lg h-16 flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2iV7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
                 <div className="bg-white/20 rounded-lg h-16 flex items-center justify-center">

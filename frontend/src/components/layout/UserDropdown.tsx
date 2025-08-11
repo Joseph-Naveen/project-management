@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, User, Settings, LogOut, Shield } from 'lucide-react';
+import { ChevronDown, User, LogOut } from 'lucide-react';
 import { useAuthContext } from '../../context/AuthContext';
 import { Avatar } from '../ui/Avatar';
+import { NavigationService } from '../../services/navigationService';
+import { ROUTES } from '../../constants';
 
 export const UserDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,25 +44,7 @@ export const UserDropdown: React.FC = () => {
       label: 'Profile',
       icon: User,
       onClick: () => {
-        // Navigate to profile page
-        setIsOpen(false);
-      },
-      divider: false
-    },
-    {
-      label: 'Settings',
-      icon: Settings,
-      onClick: () => {
-        // Navigate to settings page
-        setIsOpen(false);
-      },
-      divider: false
-    },
-    {
-      label: 'Account',
-      icon: Shield,
-      onClick: () => {
-        // Navigate to account page
+        NavigationService.to(ROUTES.PROFILE);
         setIsOpen(false);
       },
       divider: true
@@ -70,8 +54,8 @@ export const UserDropdown: React.FC = () => {
       icon: LogOut,
       onClick: handleLogout,
       divider: false,
-      className: 'text-red-600 hover:text-red-700 hover:bg-red-50'
-    }
+      className: 'text-red-600 hover:text-red-700'
+    },
   ];
 
   return (

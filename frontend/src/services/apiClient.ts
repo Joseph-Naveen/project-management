@@ -81,9 +81,16 @@ class ApiClient {
     this.instance.interceptors.request.use(
       (config) => {
         const token = TokenManager.getAccessToken();
-        
-        // Skip API calls if no token is available (except for auth endpoints)
-        if (!token && !config.url?.includes('/auth/')) {
+        const url = config.url || '';
+        const isPublicAuthEndpoint = (
+          url.includes('/auth/login') ||
+          url.includes('/auth/register') ||
+          url.includes('/auth/refresh') ||
+          url.includes('/auth/check-email')
+        );
+
+        // Skip API calls if no token is available (except explicit public auth endpoints)
+        if (!token && !isPublicAuthEndpoint) {
           console.log('[API] Skipping request - no auth token available');
           return Promise.reject(new Error('No authentication token available'));
         }
@@ -148,9 +155,14 @@ class ApiClient {
 
             // Attempt to refresh the token
             const response = await this.refreshToken(refreshToken);
-            const { accessToken, refreshToken: newRefreshToken } = response.data;
+            // Support both backend response shapes: { data: { token, refreshToken } } or { data: { accessToken, refreshToken } }
+            const { token, accessToken, refreshToken: newRefreshToken } = (response.data || {}) as any;
+            const newAccessToken = accessToken || token;
+            if (!newAccessToken || !newRefreshToken) {
+              throw new Error('Invalid refresh response');
+            }
 
-            TokenManager.setTokens(accessToken, newRefreshToken);
+            TokenManager.setTokens(newAccessToken, newRefreshToken);
 
             // Process the failed queue
             this.failedQueue.forEach(({ resolve }) => resolve());

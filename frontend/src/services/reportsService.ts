@@ -90,6 +90,8 @@ class ReportsService {
       activeProjects: number;
       completedProjects: number;
       avgCompletionRate: number;
+      overdueProjects?: number;
+      onHoldProjects?: number;
     };
   }>> {
     try {
@@ -117,6 +119,8 @@ class ReportsService {
           activeProjects: number;
           completedProjects: number;
           avgCompletionRate: number;
+          overdueProjects?: number;
+          onHoldProjects?: number;
         };
       }>('/reports/projects', { params });
       return {
@@ -391,6 +395,7 @@ class ReportsService {
       activeUsers: number;
       totalTasks: number;
       totalHours: number;
+      billableHours?: number;
       avgCompletionRate: number;
     };
     users: Array<{
@@ -421,6 +426,7 @@ class ReportsService {
           activeUsers: number;
           totalTasks: number;
           totalHours: number;
+          billableHours?: number;
           avgCompletionRate: number;
         };
         users: Array<{

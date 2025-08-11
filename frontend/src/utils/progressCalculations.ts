@@ -6,18 +6,23 @@ import type { Project, Task } from '../types/models';
  * @returns Progress percentage (0-100)
  */
 export const calculateProjectProgress = (project: Project): number => {
-  // If project has taskCounts, use them for calculation
-  if (project.taskCounts) {
-    const { todo, inProgress, review, done } = project.taskCounts;
-    const totalTasks = todo + inProgress + review + done;
-    
-    if (totalTasks === 0) return 0;
-    return Math.round((done / totalTasks) * 100);
+  // Prefer explicit progress if provided by backend
+  if (typeof project.progress === 'number' && !Number.isNaN(project.progress)) {
+    return Math.max(0, Math.min(100, Math.round(project.progress)));
   }
-  
-  // If project has a taskCount and explicit progress, use it
-  if (project.progress !== undefined) {
-    return project.progress;
+
+  // If project has taskCounts, use them for calculation (support both inProgress and in_progress keys)
+  if (project.taskCounts) {
+    const counts: any = project.taskCounts as any;
+    const todo = Number(counts.todo || 0);
+    const inProgress = Number(counts.inProgress || counts.in_progress || 0);
+    const review = Number(counts.review || 0);
+    const done = Number(counts.done || 0);
+    const totalTasks = todo + inProgress + review + done;
+
+    if (!totalTasks || totalTasks <= 0) return 0;
+    const pct = Math.round((done / totalTasks) * 100);
+    return Math.max(0, Math.min(100, pct));
   }
   
   // Fallback to 0
