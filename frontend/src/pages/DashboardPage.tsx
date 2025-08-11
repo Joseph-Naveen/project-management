@@ -78,16 +78,24 @@ export const DashboardPage = () => {
       console.log('🔔 Activity response:', activityResponse);
       if (activityResponse.success && activityResponse.data) {
         // API returns { data: { activities: [...] } }
-        let activitiesData = activityResponse.data.activities || [];
+        let activitiesData: any[] = activityResponse.data.activities || [];
         if (activitiesData.length === 0) {
           try {
             const myAct = await (await import('../services/userService')).userService.getMyActivity(10);
             if (myAct.success && myAct.data) {
               activitiesData = myAct.data.activities.map((a: any) => ({
-                id: a.id,
-                description: a.description,
-                createdAt: a.createdAt,
-                actor: { name: 'You' },
+                id: String(a.id),
+                type: String(a.type || 'update'),
+                description: String(a.description || ''),
+                entityId: String(a.entityId || ''),
+                entityType: String(a.entityType || 'task'),
+                actorId: String(a.actorId || ''),
+                actor: {
+                  id: String(a.actorId || ''),
+                  name: 'You',
+                  avatar: '',
+                },
+                createdAt: String(a.createdAt || new Date().toISOString()),
               }));
             }
           } catch {}
